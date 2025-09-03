@@ -17,8 +17,9 @@ Based on GI6E encoding, a wireless radio communication espionage tool to protect
 # Install
 
 ```bash
+$ pip install --upgrade pip
 $ ./install.sh
-$ pip install -r requirement.txt
+$ pip install -r requirement.txt --config-settings --confirm-license= --verbose
 ```
 
 ![alt text](./pic/image.png)
@@ -105,4 +106,5 @@ Select audio input device
 ⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⣷⣶⣶⣶⣶⣶⣶⣾⣿⣿⣿⣿⣿⣿⣿⡿⠛⠁⠀
 ⠀⠀⠀⠀⠈⠙⠛⠿⠿⢿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⠿⠿⠛⠛⠉⠁⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+
 ```
