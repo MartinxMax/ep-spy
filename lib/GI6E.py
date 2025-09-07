@@ -38,6 +38,7 @@ class grid():
         'F': '--...-', '5': '--..-.','-':'--..--',
         '.':'.'
         }
+        
         self.path = './lib/history/'
         self.__MORSE_REVERSE_DICT = {v: k for k, v in self.__MORSE_CODE_DICT.items()}
         self.sample_rate = 44100
@@ -63,7 +64,7 @@ class grid():
             return grid_hex_
         hex_ = self.__str_2_hex_list(text)
         hex_ = __hex_2_grid(hex_)
-        hex_.insert(0,self.__MORSE_CODE_DICT['+'])
+        hex_.insert(0,'. . '+self.__MORSE_CODE_DICT['+'])
         if wav:
             filename = os.path.join(self.path, 'generate', f"{int(time.time())}.wav")
             self.__grid_2_wav(hex_,filename)
@@ -78,6 +79,7 @@ class grid():
     and converting the hex string into a UTF-8 decoded plaintext.
     '''
     def grid_2_text(self,text:str):
+        
         words = text.strip("'").split(' . ')
         words = [x for x in words if x]
         decoded_words = ''
@@ -128,7 +130,9 @@ class grid():
     Requires providing the path to the WAV audio file.
     '''
     def wav_2_text(self,wav_path:str):
-        if not wav_path:return False
+        if not wav_path:
+            print("[!] No wav path...")
+            return False
         def envelope(signal, rate, window_ms=10):
             window_size = int(rate * window_ms / 1000)
             return np.convolve(np.abs(signal),
@@ -155,19 +159,21 @@ class grid():
 
         def decode_grid(durations, dot_length):
             grid = ""
+            
             for state, duration in durations:
                 units = round(duration / dot_length)
-                if state == 1:  
+                
+                if state == 1: 
                     if units <= 1.5:
                         grid += '.'
                     else:
                         grid += '-'
                 else: 
-                    if units >= 6:
+                    if units > 8:
                         grid += '  ' 
                     elif units >= 2:
                         grid += ' '  
-        
+  
             return grid.strip()
         rate, data = wav.read(wav_path)
         if data.ndim > 1:
@@ -178,7 +184,9 @@ class grid():
         durations = extract_durations(bin_sig, rate)
         dot_length = estimate_dot_length(durations)
         grid = decode_grid(durations, dot_length)+' '
-        grid_dec = self.grid_2_text(grid)
+        grid_dec = self.grid_2_text(grid[grid.find('-.-.--'):])
+
+ 
         return (grid,grid_dec)
 
 
@@ -188,14 +196,15 @@ class grid():
     If no loopback devices are detected, prints a warning and returns None.
     '''
     def get_audio_list(self):
-        lbs = sc.all_microphones(include_loopback=True)
-        lbs = [m for m in lbs if m.isloopback]
+        lbs = sc.all_microphones()
+        lbs = [m for m in lbs if not m.isloopback and all(x not in m.name.lower() for x in ['virtual', 'loopback', 'cable'])]
+        
         if not lbs:
-            print("[!] No loopback device found. Please enable Stereo Mix or install VB-Cable.")
+            print("[!] No real microphone found. Please connect a microphone.")
             return
+        
         mic_list = [f"[{i}] {m.name}" for i, m in enumerate(lbs)]
-        return (mic_list,lbs)
-
+        return (mic_list, lbs)
 
     '''
     Real-time listening on a selected loopback audio device. 
@@ -229,8 +238,7 @@ class grid():
                 return None
 
         print(f"[*] Initializing {mic.name} and starting loopback monitoring...")
-
-        # 2) 初始化緩衝，每次都重來
+ 
         buffer_audio = []
         buffer_morse_bits = np.array([], dtype=int)
         recording = False
@@ -251,18 +259,19 @@ class grid():
                     env = np.mean(np.abs(data))
                     bit = 1 if env > threshold else 0
 
-                    # 滑動緩衝 bit
+ 
                     buffer_morse_bits = np.append(buffer_morse_bits, bit)
                     if buffer_morse_bits.size > max_bits:
                         buffer_morse_bits = buffer_morse_bits[-max_bits:]
 
-                    # 偵測開始
+ 
                     if bit == 1 and not recording:
                         recording = True
                         buffer_audio.clear()
                         print("[+] Signal detected")
+                         
 
-                    # 收音並偵測靜默
+ 
                     if recording:
                         buffer_audio.append(data.copy())
                         if bit == 0:
@@ -274,28 +283,28 @@ class grid():
                             silent_chunks = 0
 
         except Exception as e:
-            print(f"[!] 錄音過程出錯: {e}")
-            # 確保 mic 釋放
+            print(f"[!] Record False: {e}")
+ 
             try: mic.close()
             except: pass
             return None
 
-        # 3) 如果有錄到，就保存並解碼
+ 
         if recording and buffer_audio:
             audio = np.concatenate(buffer_audio)
             fn = os.path.join(save_dir, f"{int(time.time())}.wav")
             wav.write(fn, self.sample_rate, (audio * 32767).astype(np.int16))
             print(f"[+] Recording saved to {fn}")
 
-            # 4) 明確釋放 mic
+ 
             try: mic.close()
             except: pass
 
-            # 5) 回傳 grid 與解碼文字
+ 
             return self.wav_2_text(fn)
         else:
             print("[!] No recording was made")
-            # 釋放 mic
+ 
             try: mic.close()
             except: pass
             return None

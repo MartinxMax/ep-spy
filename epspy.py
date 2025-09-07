@@ -211,7 +211,7 @@ class EP_SPY(QMainWindow):
             opacity_menu.addAction(act)
         settings_menu.addMenu(opacity_menu)
 
-        input_menu = QMenu("Input Devices", self)
+        input_menu = QMenu("RX", self)
         self.input_action_group = QActionGroup(self)
         self.input_action_group.setExclusive(True)
         for idx, name in enumerate(input_device_names):
@@ -223,7 +223,7 @@ class EP_SPY(QMainWindow):
             input_menu.addAction(act)
         settings_menu.addMenu(input_menu)
 
-        output_menu = QMenu("Output Devices", self)
+        output_menu = QMenu("TX", self)
         self.output_action_group = QActionGroup(self)
         self.output_action_group.setExclusive(True)
         self.output_devices = get_output_devices()
@@ -341,6 +341,7 @@ class EP_SPY(QMainWindow):
                         timestamp = datetime.datetime.fromtimestamp(os.path.getmtime(fpath)).strftime('%Y-%m-%d %H:%M:%S')
                         grid, dec = grid_.wav_2_text(fpath)
                         label = f"{timestamp}@Anonymous"
+                     
                         self.append_message(label, dec)
                     except Exception as e:
                         self.append_message("SYSTEM", f"[!] Error processing file {fpath}: {e}", "#FFFF00")
